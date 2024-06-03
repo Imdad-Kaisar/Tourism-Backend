@@ -1,9 +1,11 @@
-const User = require('../models/user')
+const User = require('../models/user');
+const {hashPassword, comparePassword}= require('../utils/auth')
 
 
 const test =(req,res) =>{
     res.json('test is working')
 }
+//register endpoint
 const registerUser= async (req,res) =>{
     try{
         const {name,email,password}=req.body;
@@ -26,8 +28,13 @@ const registerUser= async (req,res) =>{
                 error: 'email is taken already'
             })
         }
+
+        const hashedPassword =await hashPassword(password)
+        //create user in database
         const user =await User.create({
-            name, email, password
+            name, 
+            email, 
+            password: hashedPassword
         }
 
         )
@@ -36,8 +43,36 @@ const registerUser= async (req,res) =>{
         console.log(error)
     }
 }
+//login endpoint
+const loginUser= async (req,res) =>{
+    try {
+        const {email, password} =req.body;
+
+    //check if user exists
+        const user= await User.findOne({email});
+        if(!user){
+            return res.json({
+                error: 'No user found'
+            })
+        }
+
+        // check if password match
+        const match = await comparePassword(password, user.password)
+        if(match){
+            res.json('passwords match')
+        }
+        if(!match){
+            res.json({
+                error: "passwords do not match"
+            })
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}
 
 module.exports= {
     test,
     registerUser,
+    loginUser
 }
